@@ -28,14 +28,8 @@ const PORT = process.env.PORT || 3000;
 
 // Konfigurasi Express
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// --- KONFIGURASI GAME ---
-// server.js
-
-// ... (kode inisialisasi awal biarkan sama) ...
-
-// --- KONFIGURASI GAME --- (tetap sama)
 const GROUP_SIZE = 2;
 const QUESTION_TIME_LIMIT = 30000;
 
@@ -270,7 +264,6 @@ app.post('/admin/delete-group', async (req, res) => {
         res.status(500).send({ message: "Failed to delete group." });
     }
 });
-
 
 // 📍 DIUBAH: Fungsi serveNextQuestion dan handleTimeUp kini menyertakan 'options'
 async function serveNextQuestion(groupId) {
