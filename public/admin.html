@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Quiz Battle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 md:p-8 shadow-2xl mb-8">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white to-yellow-200 bg-clip-text text-transparent mb-2">管理者ダッシュボード</h1>
+                    <p class="text-gray-300 text-sm md:text-base">Admin Dashboard - Real-time Battle Monitor</p>
+                </div>
+                <div class="flex items-center space-x-2 bg-white/5 rounded-2xl px-4 py-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-green-400 text-sm font-medium">Live Monitoring</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Controls -->
+        <div id="admin-controls" class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 shadow-2xl mb-8">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <button id="start-btn" class="flex-1 sm:flex-none bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-green-300/50">
+                    <span class="flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>Mulai Pertandingan</span>
+                    </span>
+                </button>
+                
+                <button id="restart-btn" class="flex-1 sm:flex-none bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-red-300/50">
+                    <span class="flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>Ulangi Pertandingan</span>
+                    </span>
+                </button>
+                
+                <div class="flex-1 sm:flex-none bg-white/5 rounded-2xl px-4 py-3 border border-white/10">
+                    <p id="game-status-text" class="text-gray-300 font-semibold text-center sm:text-left whitespace-nowrap">Status: Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-white" id="total-groups">0</p>
+                        <p class="text-gray-300 text-sm">Total Groups</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-white" id="active-groups">0</p>
+                        <p class="text-gray-300 text-sm">Active Groups</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-white" id="highest-score">0</p>
+                        <p class="text-gray-300 text-sm">Highest Score</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V7l-7-5z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-white" id="ready-groups">0</p>
+                        <p class="text-gray-300 text-sm">Ready Groups</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 md:p-8 shadow-2xl">
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-6 flex items-center space-x-3">
+                <svg class="w-8 h-8 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span>Leaderboard</span>
+            </h2>
+            
+            <div id="leaderboard" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div class="text-center text-gray-400 col-span-full py-12">
+                    <div class="animate-spin w-8 h-8 border-4 border-gray-600 border-t-white rounded-full mx-auto mb-4"></div>
+                    <p>Menunggu data grup...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // GANTI DENGAN KONFIGURASI FIREBASE ANDA
+         const firebaseConfig = {
+  apiKey: "AIzaSyA0nO8VO1Y60-hpd0n1_8400D76aVJgckQ",
+  authDomain: "kotoba-battle.firebaseapp.com",
+  databaseURL: "https://kotoba-battle-default-rtdb.firebaseio.com",
+  projectId: "kotoba-battle",
+  storageBucket: "kotoba-battle.firebasestorage.app",
+  messagingSenderId: "917434485252",
+  appId: "1:917434485252:web:2d90cd474c6570a6fcc351",
+  measurementId: "G-CR7QSQZYF5"
+};
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const leaderboardContainer = document.getElementById('leaderboard');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const gameStatusText = document.getElementById('game-status-text');
+
+        // Stats elements
+        const totalGroupsEl = document.getElementById('total-groups');
+        const activeGroupsEl = document.getElementById('active-groups');
+        const highestScoreEl = document.getElementById('highest-score');
+        const readyGroupsEl = document.getElementById('ready-groups');
+
+        // --- FUNGSI AKSI ADMIN ---
+        async function postToServer(endpoint, body = {}) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`Failed to post to ${endpoint}:`, error);
+                Swal.fire('Error!', error.message, 'error');
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            Swal.fire({
+                title: 'Mulai Pertandingan?',
+                text: "Semua grup yang siap akan memulai game.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, mulai!'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    postToServer('/admin/start-battle').then(res => Swal.fire('Dimulai!', res.message, 'success'));
+                }
+            });
+        });
+
+        restartBtn.addEventListener('click', () => {
+            Swal.fire({
+                title: 'Anda Yakin?',
+                text: "Ini akan menghapus SEMUA grup dan user! Sesi akan dimulai dari nol.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, hapus semua!'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    postToServer('/admin/restart-battle').then(res => Swal.fire('Direset!', res.message, 'success'));
+                }
+            });
+        });
+        
+        // --- REALTIME LISTENER ---
+        db.ref('groups').on('value', snapshot => {
+            const groupsData = snapshot.val();
+            const groupsArray = groupsData ? Object.keys(groupsData).map(key => ({ id: key, ...groupsData[key] })) : [];
+            groupsArray.sort((a, b) => (b.score || 0) - (a.score || 0) || (a.totalTime || 0) - (b.totalTime || 0));
+            
+            // Update stats
+            updateStats(groupsArray);
+            renderLeaderboard(groupsArray);
+            
+            // Update tombol start
+            const hasReadyGroups = groupsArray.some(g => g.status === 'ready');
+            startBtn.disabled = !hasReadyGroups;
+        });
+        
+        db.ref('gameState').on('value', snapshot => {
+            const state = snapshot.val();
+            if (state?.status === 'in_progress') {
+                gameStatusText.innerHTML = `
+                    <span class="flex items-center justify-center space-x-2">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span>Pertandingan Sedang Berlangsung</span>
+                    </span>
+                `;
+                startBtn.disabled = true;
+                restartBtn.disabled = false;
+            } else {
+                gameStatusText.innerHTML = `
+                    <span class="flex items-center justify-center space-x-2">
+                        <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                        <span>Menunggu di Lobi</span>
+                    </span>
+                `;
+                 restartBtn.disabled = false; // Admin bisa restart kapan saja
+            }
+        });
+
+        function updateStats(groups) {
+            const totalGroups = groups.length;
+            const activeGroups = groups.filter(g => g.status === 'playing' || g.status === 'ready').length;
+            const highestScore = groups.length > 0 ? Math.max(...groups.map(g => g.score || 0)) : 0;
+            const readyGroups = groups.filter(g => g.status === 'ready').length;
+
+            totalGroupsEl.textContent = totalGroups;
+            activeGroupsEl.textContent = activeGroups;
+            highestScoreEl.textContent = highestScore;
+            readyGroupsEl.textContent = readyGroups;
+        }
+
+        function renderLeaderboard(groups) {
+            leaderboardContainer.innerHTML = groups.length === 0 
+                ? `<div class="text-center text-gray-400 col-span-full py-12">
+                     <svg class="w-16 h-16 mx-auto mb-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                       <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                     </svg>
+                     <p class="text-lg">Belum ada grup yang terbentuk</p>
+                     <p class="text-sm text-gray-500 mt-2">Grup akan muncul setelah pemain bergabung</p>
+                   </div>` 
+                : '';
+
+            groups.forEach((group, index) => {
+                const rank = index + 1;
+                let rankBadge = '';
+                let cardBorder = 'border-white/20';
+                
+                if (rank === 1 && group.score > 0) {
+                    rankBadge = `
+                        <div class="absolute -top-3 -right-3 w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                        </div>
+                    `;
+                    cardBorder = 'border-yellow-400/50';
+                }
+
+                let statusColor = 'text-gray-400';
+                let statusBg = 'bg-gray-500/20';
+                let statusIcon = '⏳';
+                
+                if (group.status === 'ready') {
+                    statusColor = 'text-blue-400';
+                    statusBg = 'bg-blue-500/20';
+                    statusIcon = '✅';
+                }
+                if (group.status === 'playing') {
+                    statusColor = 'text-green-400';
+                    statusBg = 'bg-green-500/20';
+                    statusIcon = '🎮';
+                }
+
+                const membersCount = group.members ? Object.keys(group.members).length : 0;
+
+                const cardHTML = `
+                <div class="relative bg-white/5 backdrop-blur-sm border ${cardBorder} rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group">
+                    ${rankBadge}
+                    
+                    <!-- Header -->
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                                    ${rank}
+                                </div>
+                                <p class="text-gray-300 font-bold">GROUP ${group.id.slice(-4)}</p>
+                            </div>
+                            <p class="text-3xl md:text-4xl font-bold text-white mb-1">${group.score || 0}</p>
+                            <p class="text-gray-400 text-sm">points</p>
+                        </div>
+                        
+                        <button data-groupid="${group.id}" class="delete-group-btn opacity-0 group-hover:opacity-100 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 p-2 rounded-xl transition-all duration-300 transform hover:scale-110">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="${statusBg} px-3 py-1 rounded-xl">
+                                <span class="${statusColor} font-semibold text-sm uppercase flex items-center space-x-1">
+                                    <span>${statusIcon}</span>
+                                    <span>${group.status || 'waiting'}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 text-sm">
+                            ${membersCount}/2 players
+                        </div>
+                    </div>
+
+                    <!-- Current Question -->
+                    <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                        <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Current Question</p>
+                        <p class="text-gray-300 text-sm line-clamp-2 h-10 overflow-hidden">
+                            ${group.currentQuestion?.text || 'Menunggu soal...'}
+                        </p>
+                    </div>
+                </div>`;
+                
+                leaderboardContainer.innerHTML += cardHTML;
+            });
+            
+            // Tambahkan event listener untuk tombol hapus
+            document.querySelectorAll('.delete-group-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const groupId = e.currentTarget.dataset.groupid;
+                    Swal.fire({
+                        title: `Hapus Grup ${groupId.slice(-4)}?`,
+                        text: "Para pemain di dalamnya akan dikeluarkan dari grup.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        confirmButtonText: 'Ya, hapus!'
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                            postToServer('/admin/delete-group', { groupId });
+                        }
+                    });
+                };
+            });
+        }
+    </script>
+</body>
+</html>
