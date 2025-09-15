@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const GROUP_SIZE = 2;
-const QUESTION_TIME_LIMIT = 30000;
+const QUESTION_TIME_LIMIT = 60000;
 
 // --- DATABASE SOAL BAHASA JEPANG --- (tetap sama)
 const questions = [
@@ -355,12 +355,7 @@ async function handleTimeUp(groupId, questionId) {
     // Beri soal baru untuk SEMUA grup agar kembali serentak
     setTimeout(() => serveNextQuestionToAllGroups(), 2000);
 }
-async function handleThrowFailure(groupId, questionId) {
-     delete groupTimers[groupId];
-     await db.ref(`answeredQuestions/${questionId}`).set(true);
-     await db.ref(`groups/${groupId}/currentQuestion`).set({ text: "Waktu Habis! Mencari soal baru..." });
-     setTimeout(() => serveNextQuestion(groupId), 2000);
-}
+
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
